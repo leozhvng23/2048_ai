@@ -1,15 +1,21 @@
 from copy import deepcopy
 
-directionVectors = (UP_VEC, DOWN_VEC, LEFT_VEC, RIGHT_VEC) = ((-1, 0), (1, 0), (0, -1), (0, 1))
+directionVectors = (UP_VEC, DOWN_VEC, LEFT_VEC, RIGHT_VEC) = (
+    (-1, 0),
+    (1, 0),
+    (0, -1),
+    (0, 1),
+)
 vecIndex = [UP, DOWN, LEFT, RIGHT] = range(4)
 
+
 class Grid:
-    def __init__(self, size: int=4):
+    def __init__(self, size: int = 4):
         self.size = size
-        self.map  = [[0] * self.size for i in range(self.size)]
+        self.map = [[0] * self.size for i in range(self.size)]
 
     def clone(self):
-        """ Returns a new Grid with a cloned map """
+        """Returns a new Grid with a cloned map"""
         gridCopy = Grid(self.size)
         gridCopy.map = deepcopy(self.map)
 
@@ -23,31 +29,33 @@ class Grid:
             self.setCellValue(pos, value)
 
     def crossBound(self, pos: tuple) -> bool:
-        """ Returns True if position is within the board"""
+        """Returns True if position is within the board"""
         return 0 <= pos[0] < self.size and 0 <= pos[1] < self.size
 
     def setCellValue(self, pos: tuple, value: int) -> None:
-        """ Set the value of cell at position pos to value """
+        """Set the value of cell at position pos to value"""
         if self.crossBound(pos):
             self.map[pos[0]][pos[1]] = value
 
     def getCellValue(self, pos: tuple):
-        """ Return the value at pos if valid """
+        """Return the value at pos if valid"""
         return self.map[pos[0]][pos[1]] if self.crossBound(pos) else None
 
     def getAvailableCells(self) -> list:
-        """ Returns a list of empty cells """
-        return [(x,y)
-                for x in range(self.size)
-                for y in range(self.size)
-                if self.map[x][y] == 0]
+        """Returns a list of empty cells"""
+        return [
+            (x, y)
+            for x in range(self.size)
+            for y in range(self.size)
+            if self.map[x][y] == 0
+        ]
 
     def getMaxTile(self) -> int:
-        """ Returns the tile with maximum value """
+        """Returns the tile with maximum value"""
         return max(max(row) for row in self.map)
 
     def move(self, direction: int):
-        """ Moves the grid in a specified direction """
+        """Moves the grid in a specified direction"""
         if direction == UP:
             return self.moveUD(False)
         if direction == DOWN:
@@ -57,9 +65,9 @@ class Grid:
         if direction == RIGHT:
             return self.moveLR(True)
 
-    def moveUD(self, down:bool=False)->bool:
-        """ Move up or down """
-        r = range(self.size -1, -1, -1) if down else range(self.size)
+    def moveUD(self, down: bool = False) -> bool:
+        """Move up or down"""
+        r = range(self.size - 1, -1, -1) if down else range(self.size)
 
         moved = False
 
@@ -84,8 +92,8 @@ class Grid:
 
         return moved
 
-    def moveLR(self, right:bool=False)->bool:
-        """ Move left or right """
+    def moveLR(self, right: bool = False) -> bool:
+        """Move left or right"""
         r = range(self.size - 1, -1, -1) if right else range(self.size)
 
         moved = False
@@ -111,16 +119,17 @@ class Grid:
 
         return moved
 
-    def merge(self, cells:list) -> None:
-        """ Merge tiles """
-        if len(cells) <= 1: return cells
+    def merge(self, cells: list) -> None:
+        """Merge tiles"""
+        if len(cells) <= 1:
+            return cells
 
         i = 0
         while i < len(cells) - 1:
-            if cells[i] == cells[i+1]:
+            if cells[i] == cells[i + 1]:
                 cells[i] *= 2
 
-                del cells[i+1]
+                del cells[i + 1]
 
             i += 1
 
@@ -150,8 +159,8 @@ class Grid:
 
         return False
 
-    def getAvailableMoves(self, dirs=vecIndex): # -> List[(int, Grid)]
-        """ Returns a list of available moves, along with moved grids """
+    def getAvailableMoves(self, dirs=vecIndex):  # -> List[(int, Grid)]
+        """Returns a list of available moves, along with moved grids"""
         availableMoves = []
 
         for x in dirs:
@@ -162,7 +171,8 @@ class Grid:
 
         return availableMoves
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     g = Grid()
     g.map[0][0] = 2
     g.map[1][0] = 2

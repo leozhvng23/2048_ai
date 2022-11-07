@@ -1,20 +1,20 @@
-from Grid       import Grid
+from Grid import Grid
 from ComputerAI import ComputerAI
-from IntelligentAgent  import IntelligentAgent
-from Displayer  import Displayer
+from IntelligentAgent import IntelligentAgent
+from Displayer import Displayer
 
 import time
 import random
 
 defaultInitialTiles = 2
-defaultProbability  = 0.9
+defaultProbability = 0.9
 
 actionDic = {
     0: "UP",
     1: "DOWN",
     2: "LEFT",
     3: "RIGHT",
-    None: "NONE" # For error logging
+    None: "NONE",  # For error logging
 }
 
 (PLAYER_TURN, COMPUTER_TURN) = (0, 1)
@@ -22,47 +22,55 @@ actionDic = {
 # Time Limit Before Losing
 timeLimit = 0.2
 allowance = 0.05
-maxTime   = timeLimit + allowance
+maxTime = timeLimit + allowance
+
 
 class GameManager:
     def __init__(self, size=4, intelligentAgent=None, computerAI=None, displayer=None):
         self.grid = Grid(size)
         self.possibleNewTiles = [2, 4]
         self.probability = defaultProbability
-        self.initTiles   = defaultInitialTiles
-        self.over        = False
+        self.initTiles = defaultInitialTiles
+        self.over = False
 
         # Initialize the AI players
         self.computerAI = computerAI or ComputerAI()
-        self.intelligentAgent   = intelligentAgent   or IntelligentAgent()
-        self.displayer  = displayer  or Displayer()
+        self.intelligentAgent = intelligentAgent or IntelligentAgent()
+        self.displayer = displayer or Displayer()
 
     def updateAlarm(self) -> None:
-        """ Checks if move exceeded the time limit and updates the alarm """
+        """Checks if move exceeded the time limit and updates the alarm"""
         if time.process_time() - self.prevTime > maxTime:
             self.over = True
-        
+
         self.prevTime = time.process_time()
 
     def getNewTileValue(self) -> int:
-        """ Returns 2 with probability 0.95 and 4 with 0.05 """
+        """Returns 2 with probability 0.95 and 4 with 0.05"""
         return self.possibleNewTiles[random.random() > self.probability]
 
-    def insertRandomTiles(self, numTiles:int):
-        """ Insert numTiles number of random tiles. For initialization """
+    def insertRandomTiles(self, numTiles: int):
+        """Insert numTiles number of random tiles. For initialization"""
         for i in range(numTiles):
             tileValue = self.getNewTileValue()
-            cells     = self.grid.getAvailableCells()
-            cell      = random.choice(cells) if cells else None
+            cells = self.grid.getAvailableCells()
+            cell = random.choice(cells) if cells else None
             self.grid.setCellValue(cell, tileValue)
 
+        # self.grid.map = [
+        #     [0, 0, 64, 1024],
+        #     [4, 0, 32, 4],
+        #     [4, 256, 0, 8],
+        #     [64, 4, 8, 2],
+        # ]
+
     def start(self) -> int:
-        """ Main method that handles running the game of 2048 """
+        """Main method that handles running the game of 2048"""
 
         # Initialize the game
         self.insertRandomTiles(self.initTiles)
         self.displayer.display(self.grid)
-        turn          = PLAYER_TURN # Player AI Goes First
+        turn = PLAYER_TURN  # Player AI Goes First
         self.prevTime = time.process_time()
 
         while self.grid.canMove() and not self.over:
@@ -72,10 +80,10 @@ class GameManager:
             move = None
 
             if turn == PLAYER_TURN:
-                print("Player's Turn: ", end="")
+                # print("Player's Turn: ", end="")
                 move = self.intelligentAgent.getMove(gridCopy)
-                
-                print(actionDic[move])
+
+                # print("move", actionDic[move])
 
                 # If move is valid, attempt to move the grid
                 if move != None and 0 <= move < 4:
@@ -89,7 +97,7 @@ class GameManager:
                     print("Invalid intelligentAgent Move - Invalid input")
                     self.over = True
             else:
-                print("Computer's turn: ")
+                # print("Computer's turn: ")
                 move = self.computerAI.getMove(gridCopy)
 
                 # Validate Move
@@ -101,6 +109,7 @@ class GameManager:
 
             # Comment out during heuristing optimizations to increase runtimes.
             # Printing slows down computation time.
+
             self.displayer.display(self.grid)
 
             # Exceeding the Time Allotted for Any Turn Terminates the Game
@@ -109,14 +118,23 @@ class GameManager:
 
         return self.grid.getMaxTile()
 
+
 def main():
     intelligentAgent = IntelligentAgent()
-    computerAI  = ComputerAI()
-    displayer   = Displayer()
+    computerAI = ComputerAI()
+    displayer = Displayer()
     gameManager = GameManager(4, intelligentAgent, computerAI, displayer)
+    # maxTile = gameManager.start()
+    # print(maxTile)
+    results = []
+    for _ in range(10):
+        gameManager = GameManager(4, IntelligentAgent(), ComputerAI(), Displayer())
+        maxTile = gameManager.start()
+        print(maxTile)
+        results.append(maxTile)
 
-    maxTile     = gameManager.start()
-    print(maxTile)
+    print(results)
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     main()
