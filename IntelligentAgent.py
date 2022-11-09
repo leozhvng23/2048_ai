@@ -1,6 +1,5 @@
 from BaseAI import BaseAI
 from Grid import Grid
-import math
 import time
 from random import randint
 
@@ -57,7 +56,7 @@ def getMonotonicity(grid):
     # multiplied by the values of a geometric sequence with common ratio r = 0.5.
     # credit: https://stackoverflow.com/questions/22342854/what-is-the-optimal-algorithm-for-the-game-2048
     weight = MONO_WEIGHT
-    max_score = -1
+    max_score = float("-inf")
     for path in PATHS:
         score = 0
         for pos in path:
@@ -104,20 +103,20 @@ def getMaxCorner(grid):
 
 class IntelligentAgent(BaseAI):
     def timesup(self, cur_time):
-        return cur_time - self.prevtime >= TIME
+        """Check for time limit"""
+        return cur_time - self.start_time >= TIME
 
     def getMove(self, grid):
-        # Selects a random move and returns it
-        # moveset = grid.getAvailableMoves()
-        # return random.choice(moveset)[0] if moveset else None
-        self.prevtime = time.process_time()
+        """returns the best next move"""
+        self.start_time = time.process_time()
 
+        # iterative deepening search with initial depth limit of 3
         prev, self.depth = None, 2
-
         while True:
             self.depth += 1
             move, _ = self.maximize(grid, float("-inf"), float("inf"), 0)
             if self.timesup(time.process_time()):
+                # time limit reached
                 if prev is not None:
                     return prev
                 else:
@@ -126,29 +125,29 @@ class IntelligentAgent(BaseAI):
             prev = move
 
     def chance(self, state, alpha, beta, depth):
+        """chance event"""
         if self.timesup(time.process_time()):
             return 0
 
         # 90% chance of placing 2's
         twos = 0.9 * self.minimize(state, alpha, beta, depth, 2)
-
         # 10% chance of placing 4's
         fours = 0.1 * self.minimize(state, alpha, beta, depth, 4)
 
         return twos + fours
 
     def maximize(self, state, alpha, beta, depth):
+        """maximizing agent: find child state with the highest utility value"""
         if self.timesup(time.process_time()):
             return None, 0
 
+        # terminal test
         moveset = state.getAvailableMoves()
         if not moveset:
             return (None, self.evaluate(state))
 
         maxMove, maxUtility = None, float("-inf")
-
-        for pair in moveset:
-            move, child = pair
+        for move, child in moveset:
             utility = self.chance(child, alpha, beta, depth + 1)
             if utility > maxUtility:
                 maxMove, maxUtility = move, utility
@@ -160,6 +159,8 @@ class IntelligentAgent(BaseAI):
         return maxMove, maxUtility
 
     def minimize(self, state, alpha, beta, depth, val):
+        """minimizing agent: find child state with the lowest utility value"""
+        # terminal test
         if depth >= self.depth:
             return self.evaluate(state)
 
@@ -177,66 +178,11 @@ class IntelligentAgent(BaseAI):
         return minUtility
 
     def evaluate(self, grid):
-        """evaluates the grid using heuristics"""
-        # w1, w2, w3, w4, w5 = 3, 3, 2, 4, 1
-        # w1, w2, w3, w4, w5 = 5, 3, 7, 1, 5
-        w1, w2, w3, w4, w5 = 1, 1, 1, 1, 1
+        """evaluates the state using 4 heuristics"""
 
         monotonicity = getMonotonicity(grid)
         smoothness = getSmoothness(grid)
         weighted_sum = getWeightedSum(grid)
         max_corner = getMaxCorner(grid)
 
-        # max_tile = grid.getMaxTile()
-        # weighted_sum = getWeightedSum(grid)
-
-        # score = (
-        #     (w1 * monotonicity)
-        #     - (w2 * math.log2(smoothness))
-        #     + (w3 * math.log2(max_tile))
-        #     + (w4 * empty_cells)  w
-        #     + (w5 * math.log2(max_corner))
-        # )
-        # score = (
-        #     1000
-        #     + (w1 * monotonicity)
-        #     - (w2 * math.log2(smoothness))
-        #     + (w3 * math.log2(max_tile))
-        #     + (w4 * empty_cells)
-        #     + (w5 * math.log2(max_corner))
-        # )
-        # score = (w1 * monotonicity) - (w2 * smoothness) + (w3 * weighted_sum)
-        score = (
-            w1 * monotonicity
-            - (w2 * smoothness)
-            + (w3 * weighted_sum)
-            + w4 * max_corner
-        )
-        # print(monotonicity, -smoothness, weighted_sum, max_corner)
-        # print(
-        #     w1 * monotonicity,
-        #     (-w2 * smoothness),
-        #     (w3 * weighted_sum),
-        #     (w4 * max_corner),
-        # )
-        # print(score)
-
-        return score
-
-
-# if __name__ == "__main__":
-#     g1 = Grid()
-#     g1.map = [[0, 4, 2, 4], [0, 8, 4, 2], [4, 32, 64, 8], [16, 4, 8, 4]]
-#     ai = IntelligentAgent()
-#     ai.evaluate(g1)
-
-#     g2 = Grid()
-#     g2.map = [[8, 32, 64, 512], [4, 8, 16, 256], [2, 4, 8, 32], [0, 0, 4, 8]]
-#     ai = IntelligentAgent()
-#     moves = len(g2.getAvailableMoves())
-#     ai.evaluate(g2)
-
-#     g2 = Grid()
-#     g2.map = [[1024, 4, 64, 0], [4, 8, 32, 4], [4, 256, 512, 8], [64, 4, 8, 2]]
-#     ai = IntelligentAgent()
-#     ai.evaluate(g2)
+        return monotonicity - smoothness + weighted_sum + max_corner

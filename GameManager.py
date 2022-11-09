@@ -57,19 +57,12 @@ class GameManager:
             cell = random.choice(cells) if cells else None
             self.grid.setCellValue(cell, tileValue)
 
-        # self.grid.map = [
-        #     [0, 0, 64, 1024],
-        #     [4, 0, 32, 4],
-        #     [4, 256, 0, 8],
-        #     [64, 4, 8, 2],
-        # ]
-
     def start(self) -> int:
         """Main method that handles running the game of 2048"""
 
         # Initialize the game
         self.insertRandomTiles(self.initTiles)
-        self.displayer.display(self.grid)
+        # self.displayer.display(self.grid)
         turn = PLAYER_TURN  # Player AI Goes First
         self.prevTime = time.process_time()
 
@@ -110,7 +103,7 @@ class GameManager:
             # Comment out during heuristing optimizations to increase runtimes.
             # Printing slows down computation time.
 
-            self.displayer.display(self.grid)
+            # self.displayer.display(self.grid)
 
             # Exceeding the Time Allotted for Any Turn Terminates the Game
             self.updateAlarm()
