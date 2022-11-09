@@ -10,7 +10,7 @@ CORNER_WEIGHT = 1000
 # WEIGHTS = [[2048, 1024, 64, 32], [512, 128, 16, 2], [256, 8, 2, 1], [4, 2, 1, 1]]
 
 
-def getMonotonicity(grid, ratio=0.9, weight=1000):
+def getMonotonicity(grid, ratio=0.9, weight=1000000):
     """calculates the monotonicity heuristic of the board"""
     # following 8 paths and check if the tiles are in a monotonic decreasing order
     # score is calculated as max of the sum of the linearized values on the board
@@ -103,7 +103,7 @@ class IntelligentAgent(BaseAI):
 
         moveset = state.getAvailableMoves()
         if not moveset:
-            return (None, float("-inf"))
+            return (None, self.evaluate(state))
 
         maxMove, maxUtility = None, float("-inf")
 
@@ -139,7 +139,9 @@ class IntelligentAgent(BaseAI):
     def evaluate(self, grid):
         """evaluates the grid using heuristics"""
         # w1, w2, w3, w4, w5 = 3, 3, 2, 4, 1
-        w1, w2, w3, w4, w5 = 10, 5, 15, 1, 10
+        # w1, w2, w3, w4, w5 = 5, 3, 7, 1, 5
+        w1, w2, w3, w4, w5 = 3, 2, 1, 1, 1
+
         monotonicity = getMonotonicity(grid)
         smoothness = getSmoothness(grid)
         # weighted_sum = getWeightedSum(grid)
@@ -164,15 +166,15 @@ class IntelligentAgent(BaseAI):
         # )
         score = (
             (w1 * monotonicity)
-            - (w2 * math.log2(smoothness))
-            + (w3 * math.log2(max_tile))
+            # - (w2 * smoothness)
+            # + (w3 * max_tile)
             + (w5 * max_corner)
         )
         # print(monotonicity, -smoothness, max_corner)
         # print(
         #     w1 * monotonicity,
-        #     (w2 * math.log2(smoothness)),
-        #     (w3 * math.log2(max_tile)),
+        #     (w2 * smoothness),
+        #     (w3 * max_tile),
         #     w5 * max_corner,
         # )
         # print(score)
