@@ -1,31 +1,69 @@
 from BaseAI import BaseAI
-from Paths import PATHS
 from Grid import Grid
 import math
 import time
 from random import randint
 
 TIME = 0.2
+MONO_WEIGHT = 100000
+MONO_RATIO = 0.5
 CORNER_WEIGHT = 1000
-# WEIGHTS = [[2048, 1024, 64, 32], [512, 128, 16, 2], [256, 8, 2, 1], [4, 2, 1, 1]]
+WEIGHTS = [[6, 5, 4, 3], [5, 4, 3, 2], [4, 3, 2, 1], [3, 2, 1, 0]]
+PATHS = [
+    [
+        (0, 0),
+        (0, 1),
+        (0, 2),
+        (0, 3),
+        (1, 3),
+        (1, 2),
+        (1, 1),
+        (1, 0),
+        (2, 0),
+        (2, 1),
+        (2, 2),
+        (2, 3),
+        (3, 3),
+        (3, 2),
+        (3, 1),
+        (3, 0),
+    ],
+    [
+        (0, 0),
+        (1, 0),
+        (2, 0),
+        (3, 0),
+        (3, 1),
+        (2, 1),
+        (1, 1),
+        (0, 1),
+        (0, 2),
+        (1, 2),
+        (2, 2),
+        (3, 2),
+        (3, 3),
+        (2, 3),
+        (1, 3),
+        (0, 3),
+    ],
+]
 
 
-def getMonotonicity(grid, ratio=0.9, weight=1000000):
+def getMonotonicity(grid):
     """calculates the monotonicity heuristic of the board"""
-    # following 8 paths and check if the tiles are in a monotonic decreasing order
+    # following 2 paths that starts at the top left corner
+    # and check if the tiles are in a monotonic decreasing order
     # score is calculated as max of the sum of the linearized values on the board
-    # multiplied by the values of a geometric sequence with common ratio r = 0.25.
+    # multiplied by the values of a geometric sequence with common ratio r = 0.5.
     # credit: https://stackoverflow.com/questions/22342854/what-is-the-optimal-algorithm-for-the-game-2048
-
-    max_score = float("-inf")
+    weight = MONO_WEIGHT
+    max_score = -1
     for path in PATHS:
         score = 0
         for pos in path:
             score += grid.getCellValue(pos) * weight
-            weight *= ratio
+            weight *= MONO_RATIO
         max_score = max(max_score, score)
-
-    # print("monotonicity:", score)
     return score
 
 
@@ -38,28 +76,30 @@ def getSmoothness(grid):
     for r in range(grid.size):
         for c in range(grid.size):
             if r < grid.size - 1:
+                # smoothness for row neighbor
                 score += abs(grid.getCellValue((r, c)) - grid.getCellValue((r + 1, c)))
             if c < grid.size - 1:
+                # smoothness for col neighbor
                 score += abs(grid.getCellValue((r, c)) - grid.getCellValue((r, c + 1)))
     return score
 
 
-# def getWeightedSum(grid):
-#     score = 0
-#     for r in range(grid.size):
-#         for c in range(grid.size):
-#             value = grid.getCellValue((r, c))
-#             score += value * WEIGHTS[r][c]
-#     return score
+def getWeightedSum(grid):
+    """calculates the weighted sum heuristic of the board"""
+    score = 0
+    for r in range(grid.size):
+        for c in range(grid.size):
+            value = grid.getCellValue((r, c))
+            score += value * WEIGHTS[r][c]
+    return score
 
 
 def getMaxCorner(grid):
-    max_val = grid.getMaxTile()
-    for r, c in [(0, 0), (0, 3), (3, 0), (3, 3)]:
-        if grid.getCellValue((r, c)) == max_val:
-            return math.log2(CORNER_WEIGHT * max_val)
+    """Rewards board if the max tile is in the top left corner"""
+    if grid.getCellValue((0, 0)) == grid.getMaxTile():
+        return CORNER_WEIGHT
 
-    return -math.log2(CORNER_WEIGHT * max_val)
+    return -CORNER_WEIGHT
 
 
 class IntelligentAgent(BaseAI):
@@ -90,10 +130,10 @@ class IntelligentAgent(BaseAI):
             return 0
 
         # 90% chance of placing 2's
-        twos = 0.95 * self.minimize(state, alpha, beta, depth, 2)
+        twos = 0.9 * self.minimize(state, alpha, beta, depth, 2)
 
         # 10% chance of placing 4's
-        fours = 0.05 * self.minimize(state, alpha, beta, depth, 4)
+        fours = 0.1 * self.minimize(state, alpha, beta, depth, 4)
 
         return twos + fours
 
@@ -140,13 +180,14 @@ class IntelligentAgent(BaseAI):
         """evaluates the grid using heuristics"""
         # w1, w2, w3, w4, w5 = 3, 3, 2, 4, 1
         # w1, w2, w3, w4, w5 = 5, 3, 7, 1, 5
-        w1, w2, w3, w4, w5 = 3, 2, 1, 1, 1
+        w1, w2, w3, w4, w5 = 1, 1, 1, 1, 1
 
         monotonicity = getMonotonicity(grid)
         smoothness = getSmoothness(grid)
-        # weighted_sum = getWeightedSum(grid)
-        max_tile = grid.getMaxTile()
+        weighted_sum = getWeightedSum(grid)
         max_corner = getMaxCorner(grid)
+
+        # max_tile = grid.getMaxTile()
         # weighted_sum = getWeightedSum(grid)
 
         # score = (
@@ -164,18 +205,19 @@ class IntelligentAgent(BaseAI):
         #     + (w4 * empty_cells)
         #     + (w5 * math.log2(max_corner))
         # )
+        # score = (w1 * monotonicity) - (w2 * smoothness) + (w3 * weighted_sum)
         score = (
-            (w1 * monotonicity)
-            # - (w2 * smoothness)
-            # + (w3 * max_tile)
-            + (w5 * max_corner)
+            w1 * monotonicity
+            - (w2 * smoothness)
+            + (w3 * weighted_sum)
+            + w4 * max_corner
         )
-        # print(monotonicity, -smoothness, max_corner)
+        # print(monotonicity, -smoothness, weighted_sum, max_corner)
         # print(
         #     w1 * monotonicity,
-        #     (w2 * smoothness),
-        #     (w3 * max_tile),
-        #     w5 * max_corner,
+        #     (-w2 * smoothness),
+        #     (w3 * weighted_sum),
+        #     (w4 * max_corner),
         # )
         # print(score)
 
