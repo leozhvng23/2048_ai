@@ -62,7 +62,7 @@ class GameManager:
 
         # Initialize the game
         self.insertRandomTiles(self.initTiles)
-        # self.displayer.display(self.grid)
+        self.displayer.display(self.grid)
         turn = PLAYER_TURN  # Player AI Goes First
         self.prevTime = time.process_time()
 
@@ -73,10 +73,10 @@ class GameManager:
             move = None
 
             if turn == PLAYER_TURN:
-                # print("Player's Turn: ", end="")
+                print("Player's Turn: ", end="")
                 move = self.intelligentAgent.getMove(gridCopy)
 
-                # print("move", actionDic[move])
+                print("move", actionDic[move])
 
                 # If move is valid, attempt to move the grid
                 if move != None and 0 <= move < 4:
@@ -90,7 +90,7 @@ class GameManager:
                     print("Invalid intelligentAgent Move - Invalid input")
                     self.over = True
             else:
-                # print("Computer's turn: ")
+                print("Computer's turn: ")
                 move = self.computerAI.getMove(gridCopy)
 
                 # Validate Move
@@ -100,10 +100,7 @@ class GameManager:
                     print("Invalid Computer AI Move")
                     self.over = True
 
-            # Comment out during heuristing optimizations to increase runtimes.
-            # Printing slows down computation time.
-
-            # self.displayer.display(self.grid)
+            self.displayer.display(self.grid)
 
             # Exceeding the Time Allotted for Any Turn Terminates the Game
             self.updateAlarm()
@@ -117,16 +114,16 @@ def main():
     computerAI = ComputerAI()
     displayer = Displayer()
     gameManager = GameManager(4, intelligentAgent, computerAI, displayer)
-    # maxTile = gameManager.start()
-    # print(maxTile)
-    results = []
-    for _ in range(10):
-        gameManager = GameManager(4, IntelligentAgent(), ComputerAI(), Displayer())
-        maxTile = gameManager.start()
-        print(maxTile)
-        results.append(maxTile)
+    maxTile = gameManager.start()
+    print(maxTile)
+    # results = []
+    # for _ in range(10):
+    #     gameManager = GameManager(4, IntelligentAgent(), ComputerAI(), Displayer())
+    #     maxTile = gameManager.start()
+    #     print(maxTile)
+    #     results.append(maxTile)
 
-    print(results)
+    # print(results)
 
 
 if __name__ == "__main__":
